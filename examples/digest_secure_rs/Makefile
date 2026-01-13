@@ -38,6 +38,13 @@ ta:
 		BUILDER=$(BUILDER) \
 		FEATURES="$(FEATURES)"
 
+emulate:
+	$(q)make -C host emulate TARGET=$(TARGET_HOST) \
+		CROSS_COMPILE=$(CROSS_COMPILE_HOST)
+	$(q)make -C ta emulate TARGET=$(TARGET_TA) \
+		CROSS_COMPILE=$(CROSS_COMPILE_TA) \
+		BUILDER=$(BUILDER) \
+		FEATURES="$(FEATURES)"
 clean:
 	$(q)make -C host clean
 	$(q)make -C ta clean

@@ -31,6 +31,7 @@ use proto::Command;
 
 pub struct DigestOp {
     pub op: Digest,
+    pub okeypad: [u8; SEC_KEY_SIZE],
 }
 
 const SEC_KEY_SIZE: usize = 64;
@@ -42,17 +43,21 @@ impl Default for DigestOp {
     fn default() -> Self {
         let op = Digest::allocate(AlgorithmId::Sha256).unwrap();
         let mut key_buffer = [0u8; SEC_KEY_SIZE];
-        let mut ctx = DigestOp { op };
+        let okeypad = [0u8; SEC_KEY_SIZE];
+        let mut ctx = DigestOp { op, okeypad };
         match PersistentObject::open(
             optee_utee::ObjectStorageConstants::Private,
             "root_key".as_bytes(),
             DataFlag::ACCESS_READ,
         ) {
             Ok(obj) => {
-                let len = obj.read(&mut key_buffer).unwrap();
-                trace_println!("Read key from storage. Len: {}, Key: {:?}", len, key_buffer);
-                trace_println!("Update digest with key");
-                ctx.op.update(&key_buffer);
+                obj.read(&mut key_buffer).unwrap();
+                trace_println!("Read key from storage. Key: {:?}", key_buffer);
+                let ikeypad = key_buffer.map(|v| v ^ 0x5c);
+                let okeypad = key_buffer.map(|v| v ^ 0x36);
+                ctx.okeypad = okeypad;
+                trace_println!("Update digest with ikeypad {:?}", ikeypad);
+                ctx.op.update(&ikeypad);
             }
             Err(_) => {
                 trace_println!("Key not found");
@@ -109,14 +114,13 @@ pub fn generate_key(sess_ctx: &mut DigestOp) -> Result<()> {
         &[],
     )?;
     obj.write(&key_buffer)?;
-    trace_println!(
-        "Create and Write Key to storage. Len: {}, Key: {:?}",
-        key_buffer.len(),
-        key_buffer
-    );
+    trace_println!("Create and Write Key to storage. Key: {:?}", key_buffer);
     sess_ctx.op.reset();
-    sess_ctx.op.update(&key_buffer);
-
+    let ikeypad = key_buffer.map(|v| v ^ 0x5c);
+    let okeypad = key_buffer.map(|v| v ^ 0x36);
+    trace_println!("Update digest with ikeypad {:?}", ikeypad);
+    sess_ctx.op.update(&ikeypad);
+    sess_ctx.okeypad = okeypad;
     Ok(())
 }
 
@@ -132,12 +136,16 @@ pub fn do_final(ctx: &mut DigestOp, params: &mut Parameters) -> Result<()> {
     let mut p0 = unsafe { params.0.as_memref()? };
     let mut p1 = unsafe { params.1.as_memref()? };
     let mut p2 = unsafe { params.2.as_value()? };
+    let mut ihash = [0u8; 128];
     let input = p0.buffer();
-    trace_println!("[+] Do Digest with {:?}", input);
-    let output = p1.buffer();
-    match ctx.op.do_final(input, output) {
+    trace_println!("[+] Update Digest with {:?}", input);
+    match ctx.op.do_final(input, &mut ihash) {
         Err(e) => Err(e),
-        Ok(hash_length) => {
+        Ok(_) => {
+            let o_digest = Digest::allocate(AlgorithmId::Sha256)?;
+            o_digest.update(&ctx.okeypad);
+            trace_println!("Final digest with okeypad {:?}", ctx.okeypad);
+            let hash_length = o_digest.do_final(&ihash, p1.buffer())?;
             p2.set_a(hash_length as u32);
             Ok(())
         }

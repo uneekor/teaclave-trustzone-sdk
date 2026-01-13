@@ -16,7 +16,7 @@
 # under the License.
 
 [package]
-name = "digest-sec-rs"
+name = "digest-hmac-rs"
 version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 license = "Apache-2.0"

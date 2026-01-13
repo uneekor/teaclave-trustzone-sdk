@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-NAME := digest-rs
+NAME := digest-hmac-rs
 
 TARGET ?= aarch64-unknown-linux-gnu
 CROSS_COMPILE ?= aarch64-linux-gnu-
@@ -35,6 +35,9 @@ host: clippy
 
 strip: host
 	@$(OBJCOPY) --strip-unneeded $(OUT_DIR)/$(NAME) $(OUT_DIR)/$(NAME)
+
+emulate: all
+	@sync_to_emulator --host $(OUT_DIR)/$(NAME)
 
 clean:
 	@cargo clean
