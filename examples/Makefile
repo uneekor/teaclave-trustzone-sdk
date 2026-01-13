@@ -45,6 +45,7 @@ COMMON_EXAMPLES = \
 	big_int-rs \
 	diffie_hellman-rs \
 	digest-rs \
+	digest-hmac-rs \
 	error_handling-rs \
 	hello_world-rs \
 	hotp-rs \
