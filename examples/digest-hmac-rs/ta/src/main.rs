@@ -52,15 +52,15 @@ impl Default for DigestOp {
         ) {
             Ok(obj) => {
                 obj.read(&mut key_buffer).unwrap();
-                trace_println!("Read key from storage. Key: {:?}", key_buffer);
+                trace_println!("[+] Read key from storage.");
                 let ikeypad = key_buffer.map(|v| v ^ 0x5c);
                 let okeypad = key_buffer.map(|v| v ^ 0x36);
                 ctx.okeypad = okeypad;
-                trace_println!("Update digest with ikeypad {:?}", ikeypad);
+                trace_println!("[+] Update digest with ikeypad");
                 ctx.op.update(&ikeypad);
             }
             Err(_) => {
-                trace_println!("Key not found");
+                trace_println!("[+] Key not found");
                 generate_key(&mut ctx).unwrap();
             }
         }
@@ -103,7 +103,7 @@ fn invoke_command(sess_ctx: &mut DigestOp, cmd_id: u32, params: &mut Parameters)
 }
 
 pub fn generate_key(sess_ctx: &mut DigestOp) -> Result<()> {
-    trace_println!("generate new key...");
+    trace_println!("[+] generate new key...");
     let mut key_buffer = [0; SEC_KEY_SIZE];
     Random::generate(&mut key_buffer);
     let mut obj = PersistentObject::create(
@@ -114,11 +114,11 @@ pub fn generate_key(sess_ctx: &mut DigestOp) -> Result<()> {
         &[],
     )?;
     obj.write(&key_buffer)?;
-    trace_println!("Create and Write Key to storage. Key: {:?}", key_buffer);
+    trace_println!("[+] Create and Write Key to storage");
     sess_ctx.op.reset();
     let ikeypad = key_buffer.map(|v| v ^ 0x5c);
     let okeypad = key_buffer.map(|v| v ^ 0x36);
-    trace_println!("Update digest with ikeypad {:?}", ikeypad);
+    trace_println!("[+] Update digest with ikeypad");
     sess_ctx.op.update(&ikeypad);
     sess_ctx.okeypad = okeypad;
     Ok(())
@@ -144,7 +144,7 @@ pub fn do_final(ctx: &mut DigestOp, params: &mut Parameters) -> Result<()> {
         Ok(_) => {
             let o_digest = Digest::allocate(AlgorithmId::Sha256)?;
             o_digest.update(&ctx.okeypad);
-            trace_println!("Final digest with okeypad {:?}", ctx.okeypad);
+            trace_println!("[+] Final digest with okeypad");
             let hash_length = o_digest.do_final(&ihash, p1.buffer())?;
             p2.set_a(hash_length as u32);
             Ok(())
