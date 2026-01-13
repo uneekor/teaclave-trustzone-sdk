@@ -34,7 +34,7 @@ export CROSS_COMPILE64="aarch64-linux-gnu-"
 if [ "$ARCH_TA" = "arm" ]
 then
   # build TA as 32-bit
-  export TA_DEV_KIT_DIR="$OPTEE_OS_DIR/out/arm-plat-vexpress/export-ta_arm32"
+  export TA_DEV_KIT_DIR="$OPTEE_OS_DIR/out/arm-plat-rockchip/export-ta_arm32"
   if [ "$STD" ]
   then
     export TARGET_TA="arm-unknown-optee"
@@ -51,7 +51,7 @@ then
   echo "set CROSS_COMPILE_TA=$CROSS_COMPILE_TA"
 else
   # build TA as 64-bit by default
-  export TA_DEV_KIT_DIR="$OPTEE_OS_DIR/out/arm-plat-vexpress/export-ta_arm64"
+  export TA_DEV_KIT_DIR="$OPTEE_OS_DIR/out/arm-plat-rockchip/export-ta_arm64"
   if [ "$STD" ]
   then
     export TARGET_TA="aarch64-unknown-optee"

@@ -17,15 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
 
 OPTEE_VERSION=$(cat ./optee-version.txt)
 OPTEE_DIR=$1
 
 # check arguments
 if [ -z "$OPTEE_DIR" ]; then
-    echo "Usage: $0 <optee_root_path>"
-    exit 1
+    export OPTEE_DIR="optee"
 else
     export OPTEE_DIR=$OPTEE_DIR
     echo "OPTEE_DIR=$OPTEE_DIR"
@@ -44,7 +42,7 @@ git clone https://github.com/OP-TEE/optee_os.git -b $OPTEE_VERSION $OPTEE_DIR/op
 # set CFG_TA_FLOAT_SUPPORT=n as workaround to fix the building error of 32bit tls TAs:
 #   multiple definition of `__aeabi_fcmple' (`__aeabi_fcmpeq' and others)
 # This means the __aeabi functions are defined both in Rustc compiler_builtins and optee libutils.
-(cd $OPTEE_DIR/optee_os && make PLATFORM=vexpress-qemu_armv8a CFG_TA_FLOAT_SUPPORT=n)
+(cd $OPTEE_DIR/optee_os && make -j PLATFORM=vexpress-qemu_armv8a CFG_TA_FLOAT_SUPPORT=n)
 
 git clone https://github.com/OP-TEE/optee_client.git -b $OPTEE_VERSION $OPTEE_DIR/optee_client
 (cd $OPTEE_DIR/optee_client && make WITH_TEEACL=0 DESTDIR=$PWD/export_arm32 CROSS_COMPILE=$CROSS_COMPILE32)
